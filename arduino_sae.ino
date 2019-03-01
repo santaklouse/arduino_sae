@@ -16,10 +16,15 @@ const int OPEN_TERMINAL = 2;
 const int OPEN_DESKTOP = 3;
 
 
+#define MAC_OS 0
+#define WIN_OS 1
+#define LINUX_OS 2
+
 #define KEY_DELETE 42
 #define KEY_TAB 43
 #define KEY_PAGE_UP 0x4B
 #define KEY_PAGE_DOWN 0x4E
+
 
 /*
  * existing key codes: https://github.com/digistump/DigisparkArduinoIntegration/blob/master/libraries/DigisparkKeyboard/DigiKeyboard.h
@@ -32,17 +37,36 @@ void setup() {
   randomSeed(analogRead(0));
 }
 
+int detectPlatform() {
+  /*
+   * Here we should read pin jumper to detect
+   * to what os it was switched
+   */
+//  return LINUX_OS;
+  return MAC_OS;
+}
+
 void openSearch() {
-  DigiKeyboard.sendKeyStroke(0, MOD_GUI_LEFT); // Super key, open 'search'
-  delay(100);
+  switch(detectPlatform()) {
+    case MAC_OS:
+      DigiKeyboard.sendKeyStroke(KEY_SPACE, MOD_GUI_LEFT); // Super key, open 'search'
+      break;
+    case LINUX_OS:
+    case WIN_OS:
+      DigiKeyboard.sendKeyStroke(0, MOD_GUI_LEFT); // Super key, open 'search'
+      break;
+  }
+  
+  delay(300);
+  DigiKeyboard.sendKeyStroke(KEY_A, MOD_CONTROL_LEFT);
   DigiKeyboard.sendKeyStroke(KEY_DELETE); //clear
   delay(300);
 }
 
 void openByCommand(char* cmd) {
   openSearch();
-  DigiKeyboard.println(cmd);
-  delay(100);
+  DigiKeyboard.print(cmd);
+  delay(200);
   DigiKeyboard.sendKeyStroke(KEY_ENTER);
 }
 
@@ -110,7 +134,7 @@ void loop() {
   
   alts();
   
-  switch (random(0, 3)) {
+  switch (random(0, 4)) {
     case OPEN_CHROME:
       openChrome();
       break;
@@ -122,6 +146,9 @@ void loop() {
       break;
     case OPEN_DESKTOP:
       openDesktop();
+      break;
+    default:
+      delay(random(200, 5000));
       break;
   }
 

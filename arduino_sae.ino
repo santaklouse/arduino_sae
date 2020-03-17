@@ -1,6 +1,7 @@
 /**
  * @author Alex Nevpryaga
  * @source https://github.com/santaklouse/arduino_sae
+ * 
  * The simple activity emulator for Digispark usb =)
  * In loop changes chrome and phpstorm windows (and tabs in it) and preses 'CTRL' key
  * just for fun...

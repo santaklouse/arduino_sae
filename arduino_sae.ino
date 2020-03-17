@@ -1,14 +1,37 @@
-/*
+/**
+ * @author Alex Nevpryaga
+ * @source https://github.com/santaklouse/arduino_sae
  * The simple activity emulator for Digispark usb =)
- * In loop changes chrome and phpstorm windows (and tabs in it) and preses 'ALT' key
+ * In loop changes chrome and phpstorm windows (and tabs in it) and preses 'CTRL' key
  * just for fun...
  * 
- * for now it works only on linux
+
+  You can also change vendor of device 
+  path ~/Library/Arduino15/packages/digistump/hardware/avr/1.6.7/libraries/DigisparkKeyboard/usbconfig.h
+
+  Below there are values for Apple Keyboard
+  #define USB_CFG_VENDOR_ID 0xac, 0x05
+  #define USB_CFG_DEVICE_ID 0x02, 0x02
+  #define USB_CFG_VENDOR_NAME     'A','p','p','l','e',' ','I','n','c','.'
+  #define USB_CFG_VENDOR_NAME_LEN 10
+  #define USB_CFG_DEVICE_NAME     'K','e','y','b','o','a','r','d'
+  #define USB_CFG_DEVICE_NAME_LEN 8
+
+ * 
+ * for now it works only on mac and linux
  */
 
 #include "DigiKeyboard.h"
 
 const int LED_PIN =  1;
+
+#define LIGHT_ON(x) digitalWrite(x, HIGH)
+#define LIGHT_OFF(x) digitalWrite(x, LOW )
+#define TOGGLE(x) digitalWrite(x, digitalRead(x) ? LOW : HIGH) //toggle the LED on x pin (HIGH and LOW is the voltage level)
+
+#define TOGGLE_LED() TOOGLE(LED_PIN) 
+#define LED_LIGHT_ON() LIGHT_ON(LED_PIN)
+#define LED_LIGHT_OFF() LIGHT_OFF(LED_PIN)
 
 const int OPEN_CHROME = 0;
 const int OPEN_PHPSTORM = 1;
@@ -24,6 +47,7 @@ const int OPEN_DESKTOP = 3;
 #define KEY_TAB 43
 #define KEY_PAGE_UP 0x4B
 #define KEY_PAGE_DOWN 0x4E
+#define KEY_LEFT_CTRL 0xe0
 
 
 /*
@@ -43,10 +67,12 @@ int detectPlatform() {
    * to what os it was switched
    */
 //  return LINUX_OS;
+//  return WIN_OS;
   return MAC_OS;
 }
 
 void openSearch() {
+  delay(random(100, 200));
   switch(detectPlatform()) {
     case MAC_OS:
       DigiKeyboard.sendKeyStroke(KEY_SPACE, MOD_GUI_LEFT); // Super key, open 'search'
@@ -57,16 +83,17 @@ void openSearch() {
       break;
   }
   
-  delay(300);
+  delay(random(300, 400));
   DigiKeyboard.sendKeyStroke(KEY_A, MOD_CONTROL_LEFT);
   DigiKeyboard.sendKeyStroke(KEY_DELETE); //clear
-  delay(300);
+  delay(random(300, 400));
 }
 
 void openByCommand(char* cmd) {
   openSearch();
+  delay(random(100, 300));
   DigiKeyboard.print(cmd);
-  delay(200);
+  delay(random(200, 400));
   DigiKeyboard.sendKeyStroke(KEY_ENTER);
 }
 
@@ -85,7 +112,7 @@ void scroll() {
 
 void openChrome() {
   openByCommand("chrome");
-  alts();
+  ctrls();
   delay(random(500, 3000));
   changeTab();
   scroll();
@@ -93,37 +120,53 @@ void openChrome() {
 
 void openPhpStorm() {
   openByCommand("phpstorm");
-  alts();
+  ctrls();
   delay(random(500, 3000));
   changeTab();
   scroll();
 }
 
 void openTerminal() {
-//  openByCommand("terminal");
-  alts();
+  //TODO
+  openByCommand("iterm");
+  blinkRandomly();
+  ctrls();
   delay(random(500, 3000));
 }
 
 void openDesktop() {
-  alts();
-  DigiKeyboard.sendKeyStroke(KEY_D, MOD_GUI_LEFT);
+  //TODO
+  blinkRandomly();
+  ctrls();
+//  DigiKeyboard.sendKeyStroke(KEY_D, MOD_GUI_LEFT);
 }
 
 void blinkRandomly() {
-  digitalWrite(LED_PIN, HIGH);   // turn the LED on (HIGH is the voltage level)
+  LED_LIGHT_ON();
   delay(random(10, 500));
-  digitalWrite(LED_PIN, LOW);    // turn the LED off by making the voltage LOW
+  LED_LIGHT_OFF();
   delay(random(10, 1000));
 }
 
 void alts() {
   for (int i = 0; i < 10; i++) {
-    digitalWrite(LED_PIN, HIGH);
+    LED_LIGHT_ON();
     DigiKeyboard.sendKeyStroke(0, MOD_ALT_LEFT);
     delay(50);
-    digitalWrite(LED_PIN, LOW);
+    LED_LIGHT_OFF();
     delay(random(50, 100));
+  }
+}
+
+void ctrls() {
+  for (int i = 0; i < 10; i++) {
+    LED_LIGHT_ON();
+    //use magic Ctrl's combination in order to avoid side-effects
+    DigiKeyboard.sendKeyStroke(KEY_LEFT_CTRL, MOD_CONTROL_LEFT);
+    DigiKeyboard.delay(100);
+    LED_LIGHT_OFF();
+    //random delay between 1s and 10s
+    DigiKeyboard.delay(random(1110, 10201));
   }
 }
 
@@ -132,7 +175,7 @@ void loop() {
   // prevent missing the first character after a delay:
   DigiKeyboard.sendKeyStroke(0);
   
-  alts();
+  ctrls();
   
   switch (random(0, 4)) {
     case OPEN_CHROME:
@@ -148,6 +191,7 @@ void loop() {
       openDesktop();
       break;
     default:
+      blinkRandomly();
       delay(random(200, 5000));
       break;
   }

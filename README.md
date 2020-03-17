@@ -1,7 +1,8 @@
 The simple activity emulator on Digispark usb board =)
-In loop changes chrome and phpstorm windows (and tabs in it) and preses 'ALT' key many times.
+In loop changes chrome and phpstorm windows (and tabs in it) and preses 'CTRL' key many times.
 
-**for now it works only on linux**
+**for now it works only on mac/linux**
+will be good to add jumper for os change
 
 # Board
 ![Board](https://s3.amazonaws.com/digistump-resources/images/l/2520dcf84a0a3bf2257c2559d7a187db.jpg)

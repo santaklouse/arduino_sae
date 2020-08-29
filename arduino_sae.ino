@@ -21,10 +21,9 @@
  * 
  * for now it works only on mac and linux
  */
-
 #include "DigiKeyboard.h"
 
-const int LED_PIN =  1;
+#define LED_PIN 1
 
 #define LIGHT_ON(x) digitalWrite(x, HIGH)
 #define LIGHT_OFF(x) digitalWrite(x, LOW )
@@ -34,11 +33,17 @@ const int LED_PIN =  1;
 #define LED_LIGHT_ON() LIGHT_ON(LED_PIN)
 #define LED_LIGHT_OFF() LIGHT_OFF(LED_PIN)
 
-const int OPEN_CHROME = 0;
-const int OPEN_PHPSTORM = 1;
-const int OPEN_TERMINAL = 2;
-const int OPEN_DESKTOP = 3;
+#define OPEN_CHROME 0
+#define OPEN_PHPSTORM 1
+#define OPEN_TERMINAL 2
+#define OPEN_DESKTOP 3
 
+#define MODE_DEFAULT 0
+#define MODE_LIGHT 1
+#define MODE_FULL 2
+
+#define PIN_LIGHT_MODE_NUM 0
+#define PIN_FULL_MODE_NUM 2
 
 #define MAC_OS 0
 #define WIN_OS 1
@@ -56,10 +61,50 @@ const int OPEN_DESKTOP = 3;
  * additional key codes: https://www.usb.org/sites/default/files/documents/hut1_12v2.pdf
  */
 
+void log(String str, bool r = false) {
+  DigiKeyboard.print(str);
+  if (r) DigiKeyboard.sendKeyStroke(KEY_ENTER);
+}
+
+void setPinToPullupMode(byte pinNumber) {
+  pinMode ((int)pinNumber, INPUT_PULLUP);
+  digitalWrite((int)pinNumber, HIGH); // enable pullup
+}
+
+bool isPinShorted(byte pin) {
+  return digitalRead(pin) == LOW;
+}
+
 void setup() {
-  // LED on.
+  setPinToPullupMode(PIN_LIGHT_MODE_NUM);
   pinMode(LED_PIN, OUTPUT);
+  setPinToPullupMode(PIN_FULL_MODE_NUM);
+
   randomSeed(analogRead(0));
+}
+
+byte mode = -1;
+byte detectMode() {
+  LED_LIGHT_OFF();
+
+  byte newMode;
+
+  if (isPinShorted(PIN_LIGHT_MODE_NUM)) {
+    newMode = MODE_LIGHT;
+  } else if (isPinShorted(PIN_FULL_MODE_NUM)) {
+    newMode = MODE_FULL;
+  } else if (mode != MODE_DEFAULT) {
+    newMode = MODE_DEFAULT;
+  }
+
+  LED_LIGHT_ON();
+
+  bool changed = mode != newMode;
+  if (changed) {
+    mode = newMode;
+  }
+
+  return mode;
 }
 
 int detectPlatform() {
@@ -129,7 +174,7 @@ void openPhpStorm() {
 
 void openTerminal() {
   //TODO
-  openByCommand("iterm");
+  openByCommand("slack");
   blinkRandomly();
   ctrls();
   delay(random(500, 3000));
@@ -171,13 +216,37 @@ void ctrls() {
   }
 }
 
-void loop() {
+void runLightCycle() {
+  //turn light on
+  LED_LIGHT_ON();
+
+  //use magic Ctrl's combination (MOD_CTRL+CTRL) in order to avoid side-effects
+  DigiKeyboard.sendKeyStroke(KEY_LEFT_CTRL, MOD_CONTROL_LEFT);
+
+  DigiKeyboard.delay(150);
+
+  //turn light off
+  LED_LIGHT_OFF();
+
+  //random delay between 7s and 20s
+  DigiKeyboard.delay(random(7110, 20201));
+}
+
+void runFullCycle() {
+  LED_LIGHT_ON();
+  DigiKeyboard.delay(300);
+  LED_LIGHT_OFF();
+  DigiKeyboard.delay(100);
+  LED_LIGHT_ON();
+  DigiKeyboard.delay(300);
+  LED_LIGHT_OFF();
+
   // this is generally not necessary but with some older systems it seems to
   // prevent missing the first character after a delay:
   DigiKeyboard.sendKeyStroke(0);
   
   ctrls();
-  
+
   switch (random(0, 4)) {
     case OPEN_CHROME:
       openChrome();
@@ -196,6 +265,18 @@ void loop() {
       delay(random(200, 5000));
       break;
   }
-
   delay(random(2000, 5000));
+}
+
+void loop() {
+  byte mode = detectMode();
+
+  if (mode == MODE_LIGHT) {
+      runLightCycle();
+    } else if (mode == MODE_FULL) {
+      runFullCycle();
+    } else {
+      //same as light for now
+      runLightCycle();
+    }
 }

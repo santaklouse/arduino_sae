@@ -20,8 +20,8 @@
   
   #define USB_CFG_VENDOR_NAME     'A','p','p','l','e',' ','I','n','c','.'
   #define USB_CFG_VENDOR_NAME_LEN 10
-  #define USB_CFG_DEVICE_NAME     'K','e','y','b','o','a','r','d'
-  #define USB_CFG_DEVICE_NAME_LEN 8
+  #define USB_CFG_DEVICE_NAME     'A','p','p','l','e',' ','K','e','y','b','o','a','r','d'
+  #define USB_CFG_DEVICE_NAME_LEN 14
 
  * 
  * for now it works only on mac and linux
@@ -54,7 +54,7 @@
 #define WIN_OS 1
 #define LINUX_OS 2
 
-
+const byte DEFAULT_PLATFORM = MAC_OS;
 /*
  * more codes can be found here: https://raw.githubusercontent.com/adafruit/Adafruit-Trinket-USB/master/TrinketHidCombo/TrinketHidCombo.h
  * additional key codes: https://www.usb.org/sites/default/files/documents/hut1_12v2.pdf
@@ -165,9 +165,9 @@ int detectPlatform() {
    * Here we should read pin jumper to detect
    * to what os it was switched
    */
-//  return LINUX_OS;
+  return DEFAULT_PLATFORM;
 //  return WIN_OS;
-  return MAC_OS;
+//  return MAC_OS;
 }
 
 void openSearch() {
@@ -230,6 +230,7 @@ void openPhpStorm() {
 void openTerminal() {
   //TODO
   openByCommand("slack");
+  pressKey(KEY_PAGE_UP);
   blinkRandomly();
   ctrls();
   delay(random(500, 3000));
@@ -255,6 +256,7 @@ void ctrls() {
     //use magic Ctrl's combination in order to avoid side-effects
     pressKey(MOD_CONTROL_LEFT, KEY_LEFT_CTRL);
     delay(100);
+    mouseMiddleClick();
     LED_LIGHT_OFF();
     //random delay between 1s and 10s
     delay(random(1110, 10201));

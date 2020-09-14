@@ -40,8 +40,9 @@
 
 #define OPEN_CHROME 0
 #define OPEN_PHPSTORM 1
-#define OPEN_TERMINAL 2
+#define OPEN_SLACK 2
 #define OPEN_DESKTOP 3
+#define OPEN_TERMINAL 4
 
 #define MODE_DEFAULT 0
 #define MODE_LIGHT 1
@@ -54,7 +55,10 @@
 #define WIN_OS 1
 #define LINUX_OS 2
 
-const byte DEFAULT_PLATFORM = MAC_OS;
+#define DEFAULT_PLATFORM MAC_OS
+//#define DEFAULT_PLATFORM LINUX_OS
+
+#define IDE_COMMAND "phpstorm"
 /*
  * more codes can be found here: https://raw.githubusercontent.com/adafruit/Adafruit-Trinket-USB/master/TrinketHidCombo/TrinketHidCombo.h
  * additional key codes: https://www.usb.org/sites/default/files/documents/hut1_12v2.pdf
@@ -78,16 +82,14 @@ const byte DEFAULT_PLATFORM = MAC_OS;
 #define MOD_CONTROL_LEFT 0x01
 #define MOD_ALT_LEFT 0x04
 
-void blink() {
-  LED_LIGHT_ON();
-  delay(300);
-  LED_LIGHT_OFF();
-  delay(100);
-}
-
-void log(String str, bool r = false) {
-  TrinketHidCombo.print(str);
-  if (r) pressKey(KEY_ENTER);
+void blink(byte i = 1) {
+  for (byte j = 0; j < i; j++) 
+  {
+    LED_LIGHT_ON();
+    delay(300);
+    LED_LIGHT_OFF();
+    delay(100);
+  }
 }
 
 void pressKey(uint8_t modifiers, uint8_t keycode1) {
@@ -122,9 +124,16 @@ void mouseMiddleClick() {
 }
 
 void moveMouseToLeftBottom() {
-  for (int i = 0; i < 20; i++) {
+  for (byte i = 0; i < 20; i++) {
     mouseMove(-127, 127);
   }
+}
+
+void mouseMoveEvent() {
+  mouseMove(10, 10);
+  mouseMove(-10, 10);
+  mouseMove(10, -10);
+  mouseMove(-10, -10);
 }
 
 void setPinToPullupMode(byte pinNumber) {
@@ -160,7 +169,7 @@ byte detectMode() {
   return mode;
 }
 
-int detectPlatform() {
+byte detectPlatform() {
   /*
    * Here we should read pin jumper to detect
    * to what os it was switched
@@ -219,27 +228,24 @@ void openChrome() {
   scroll();
 }
 
-void openPhpStorm() {
-  openByCommand("phpstorm");
+void openIDE() {
+  if (sizeof(IDE_COMMAND) == 0) {
+    return;
+  }
+  openByCommand(IDE_COMMAND);
   scroll();
   delay(random(500, 3000));
   changeTab();
   scroll();
 }
 
-void openTerminal() {
+void openSlack() {
   //TODO
   openByCommand("slack");
   pressKey(KEY_PAGE_UP);
   blinkRandomly();
   ctrls();
   delay(random(500, 3000));
-}
-
-void openDesktop() {
-  //TODO
-  blinkRandomly();
-  ctrls();
 }
 
 void blinkRandomly() {
@@ -251,7 +257,7 @@ void blinkRandomly() {
 
 void ctrls() {
   int amount = random(1, 10);
-  for (int i = 0; i < amount; i++) {
+  for (byte i = 0; i < amount; i++) {
     LED_LIGHT_ON();
     //use magic Ctrl's combination in order to avoid side-effects
     pressKey(MOD_CONTROL_LEFT, KEY_LEFT_CTRL);
@@ -269,6 +275,10 @@ void runLightCycle() {
 
   //use magic Ctrl's combination (MOD_CTRL+CTRL) in order to avoid side-effects
   pressKey(MOD_CONTROL_LEFT, KEY_LEFT_CTRL);
+
+  for (byte i =0; i < random(0, 4); i++) {
+    mouseMoveEvent();
+  }
   
   delay(150);
 
@@ -289,18 +299,26 @@ void runFullCycle() {
   
   ctrls();
 
-  switch (random(0, 4)) {
+  switch (random(0, 5)) {
     case OPEN_CHROME:
       openChrome();
       break;
     case OPEN_PHPSTORM:
-      openPhpStorm();
+      openIDE();
+      break;
+    case OPEN_SLACK:
+      openSlack();
       break;
     case OPEN_TERMINAL:
-      openTerminal();
-      break;
+      // TODO
+      //openTerminal();
     case OPEN_DESKTOP:
-      openDesktop();
+      // TODO
+      //openDesktop();
+
+      // due to above TODO just run light cycle
+      runLightCycle();
+      
       break;
     default:
       blinkRandomly();
@@ -309,6 +327,7 @@ void runFullCycle() {
   }
   delay(random(2000, 5000));
 }
+
 byte workMode = 0;
 void setup() {
   setPinToPullupMode(PIN_LIGHT_MODE_NUM);
@@ -320,25 +339,18 @@ void setup() {
   randomSeed(analogRead(0));
 
   workMode = detectMode();
-  if (workMode == MODE_LIGHT) {
-    blink();
-    blink();
-  } else if (workMode == MODE_FULL) {
-    blink();
-    blink();
-    blink();
-  } else {
-    blink();
-    blink();
+  if (workMode == MODE_FULL) {
+    return blink(3);
   }
+  blink(2);  
 }
 
 void loop() {
-   
   workMode = detectMode();
   if (workMode == MODE_LIGHT) {
       runLightCycle();
-  } else if (workMode == MODE_FULL) {
+  } else 
+  if (workMode == MODE_FULL) {
       runFullCycle();
   } else {
     //same as light for now

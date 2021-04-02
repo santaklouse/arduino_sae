@@ -44,9 +44,11 @@
 #define OPEN_DESKTOP 3
 #define OPEN_TERMINAL 4
 
-#define MODE_DEFAULT 0
-#define MODE_LIGHT 1
+#define MODE_LIGHT 0
+#define MODE_MEDIUM 1
 #define MODE_FULL 2
+
+#define DEFAULT_MODE MODE_LIGHT
 
 #define PIN_LIGHT_MODE_NUM 0
 #define PIN_FULL_MODE_NUM 2
@@ -58,6 +60,7 @@
 #define DEFAULT_PLATFORM MAC_OS
 //#define DEFAULT_PLATFORM LINUX_OS
 
+// "phpstorm" for example...
 #define IDE_COMMAND "phpstorm"
 /*
  * more codes can be found here: https://raw.githubusercontent.com/adafruit/Adafruit-Trinket-USB/master/TrinketHidCombo/TrinketHidCombo.h
@@ -152,11 +155,11 @@ byte detectMode() {
   byte newMode;
 
   if (isPinShorted(PIN_LIGHT_MODE_NUM)) {
-    newMode = MODE_LIGHT;
+    newMode = MODE_MEDIUM;
   } else if (isPinShorted(PIN_FULL_MODE_NUM)) {
     newMode = MODE_FULL;
-  } else if (mode != MODE_DEFAULT) {
-    newMode = MODE_DEFAULT;
+  } else if (mode != DEFAULT_MODE) {
+    newMode = MODE_LIGHT;
   }
 
   LED_LIGHT_ON();
@@ -199,7 +202,7 @@ void openSearch() {
 
 void openByCommand(char* cmd) {
   openSearch();
-  delay(random(100, 300));
+  delay(random(400, 1000));
   TrinketHidCombo.print(cmd);
   delay(random(200, 400));
   pressKey(KEY_ENTER);
@@ -269,7 +272,7 @@ void ctrls() {
   }
 }
 
-void runLightCycle() {
+void runMediumCycle(bool delayed = false) {
   //turn light on
   LED_LIGHT_ON();
 
@@ -285,8 +288,15 @@ void runLightCycle() {
   //turn light off
   LED_LIGHT_OFF();
 
+  int from = 7110;
+  int to = 20201;
+  if (delayed) {
+    from *= 5;
+    to *= 5;
+  }
+
   //random delay between 7s and 20s
-  delay(random(7110, 20201));
+  delay(random(from, to));
 }
 
 void runFullCycle() {
@@ -317,7 +327,7 @@ void runFullCycle() {
       //openDesktop();
 
       // due to above TODO just run light cycle
-      runLightCycle();
+      runMediumCycle();
       
       break;
     default:
@@ -326,6 +336,10 @@ void runFullCycle() {
       break;
   }
   delay(random(2000, 5000));
+}
+
+void runLightCycle() {
+  runMediumCycle(true);
 }
 
 byte workMode = 0;
@@ -340,21 +354,35 @@ void setup() {
 
   workMode = detectMode();
   if (workMode == MODE_FULL) {
-    return blink(3);
+    blink(3);
+  } else if (workMode == MODE_MEDIUM) {
+    blink(2);
+  } else {
+    blink(1);
   }
-  blink(2);  
+    
+}
+
+void runMode(byte mode) {
+  switch(mode) {
+    case MODE_LIGHT:
+        /*
+        runLightCycle();
+        break;
+        */
+    case MODE_MEDIUM:
+        runMediumCycle();
+        break;
+    case MODE_FULL:
+        runFullCycle();
+        break;
+    default:
+        runMediumCycle();
+        break;
+  }
 }
 
 void loop() {
-  workMode = detectMode();
-  if (workMode == MODE_LIGHT) {
-      runLightCycle();
-  } else 
-  if (workMode == MODE_FULL) {
-      runFullCycle();
-  } else {
-    //same as light for now
-    runLightCycle();
-  }
+  runMode(detectMode());
   TrinketHidCombo.poll(); // check if USB needs anything done
 }
